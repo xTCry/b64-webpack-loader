@@ -1,4 +1,5 @@
 [![npm][npm]][npm-url]
+[![used by][used-by]][npm-url]
 [![node][node]][node-url]
 [![deps][deps]][deps-url]
 
@@ -7,7 +8,7 @@
     <img width="120" height="120"
       src="https://webpack.js.org/assets/icon-square-big.svg">
   </a>
-  <h1>Native base64 loader</h1>
+  <h1><s>Native</s> Resource base64 loader</h1>
 </div>
 
 
@@ -126,6 +127,7 @@ module.exports = {
       test: /\.node$/,
       loader: "b64-loader",
       options: {
+        tempDir: "blessedApp",
         dependencies: {
           'pty.node': [
             'winpty.dll',
@@ -141,11 +143,12 @@ module.exports = {
 
 
 
-[npm]: https://img.shields.io/npm/v/b64-loader.svg
+[npm]: https://img.shields.io/npm/v/b64-loader.svg?style=flat-square
+[used-by]: https://img.shields.io/npm/dt/b64-loader?label=used%20by&style=flat-square
 [npm-url]: https://npmjs.com/package/b64-loader
 
-[node]: https://img.shields.io/node/v/b64-loader.svg
+[node]: https://img.shields.io/node/v/b64-loader.svg?style=flat-square
 [node-url]: https://nodejs.org
 
-[deps]: https://david-dm.org/xTCry/b64-webpack-laoder.svg
+[deps]: https://david-dm.org/xTCry/b64-webpack-laoder.svg?style=flat-square
 [deps-url]: https://david-dm.org/xTCry/b64-webpack-laoder

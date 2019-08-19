@@ -1,7 +1,7 @@
 {
   "name": "b64-loader",
   "version": "1.0.0",
-  "description": "WebPack Loader of native components and their dependencies",
+  "description": "WebPack Loader of resources and their dependencies using base64 in a temporary folder",
   "main": "index.js",
   "scripts": {
     "release": "standard-version"
