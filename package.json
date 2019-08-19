@@ -1,0 +1,15 @@
+{
+  "name": "b64-loader",
+  "version": "1.0.0",
+  "description": "WebPack Loader of native components and their dependencies",
+  "main": "index.js",
+  "scripts": {
+    "release": "standard-version"
+  },
+  "repository": "git@github.com:xTCry/b64-webpack-laoder.git",
+  "author": "xTCry (Vladislav Kh)",
+  "license": "MIT",
+  "devDependencies": {
+    "standard-version": "^7.0.0"
+  }
+}
