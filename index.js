@@ -19,13 +19,14 @@ function getSum(e) {
         .toString();
 }
 
-module.exports = function (source) {
+module.exports = b64Loader = function (source) {
 
     const config = Object.assign({
         tempDir: 'myAddons',
         resourceDir: false,
         grouping: [],
         dependencies: {},
+        dirs: {},
     }, this.query);
 
     const resourceName = Path.basename(this.resourcePath);
@@ -39,12 +40,46 @@ module.exports = function (source) {
             const content = Fs.readFileSync(Path.join(Path.dirname(this.resourcePath), depName));
             outCode += addResource(content, Path.basename(depName), Path.dirname(Path.join(resourceDir, depName)), config.tempDir);
         }
-	}
+    }
 
-    outCode += addResource(source, resourceName, resourceDir, config.tempDir);
+    if (config.dirs && config.dirs.hasOwnProperty(resourceName)) {
+        for (const dir of config.dirs[resourceName]) {
+            const curPath = Path.join(Path.dirname(this.resourcePath), dir);
+            const files = Fs.readdirSync(curPath)/* .filter(e => e != resourceName) */;
+            outCode += filesCycle(curPath, { resourceDir, tempDir: config.tempDir }, files);
+        }
+    }
+
+    if (source && source.length > 0)
+        outCode += addResource(source, resourceName, resourceDir, config.tempDir);
+
+    outCode += `;if(!module.exports.path) module.exports.path = path.resolve(os.tmpdir(), '${config.tempDir}', '${slash(resourceDir)}');`;
 
     return outCode;
 };
+
+module.exports.custom = function (resourcePath, source, config) {
+    this.resourcePath = resourcePath;
+    this.query = config;
+
+    return b64Loader(source);
+}
+
+
+function filesCycle(fistPath, cfg, files, cPath = "") {
+    let res = "";
+    for (const file of files) {
+        const testPath = Path.join(fistPath, cPath, file);
+        if (Fs.statSync(testPath).isDirectory()) {
+            res += filesCycle(fistPath, cfg, Fs.readdirSync(testPath), Path.join(cPath, file));
+            continue;
+        }
+
+        const content = Fs.readFileSync(testPath);
+        res += addResource(content, file, Path.join(cfg.resourceDir, cPath), cfg.tempDir);
+    }
+    return res;
+}
 
 function initPacker() {
     let res = ``;
@@ -61,12 +96,13 @@ function initPacker() {
     res += `function getSum(e) {
         return createHash('md5').update(e).digest('hex').toString();
     };`;
-    
+
     return res;
 }
 
 function addResource(content, resourceName, resourceDir, tempDir) {
-    return `;(function() {
+    return `
+    ;(function() {
 		var resourceData = '${content.toString('base64')}';
 		var tempPath = path.resolve(os.tmpdir(), '${tempDir}', '${slash(resourceDir)}');
 		var resourcePath = path.join(tempPath, '${resourceName}');
@@ -75,8 +111,8 @@ function addResource(content, resourceName, resourceDir, tempDir) {
 			if(!Fs.existsSync(resourcePath) || getSum(Fs.readFileSync(resourcePath).toString('base64')) != "${getSum(content.toString('base64'))}")
 				Fs.writeFileSync(resourcePath, Buffer.from(resourceData, 'base64'));
 		} catch(ex) { throw Error('Failed to export file ${resourceName}: ' + ex); }
-		${Path.extname(resourceName) == ".node" && `try { global.process.dlopen(module, resourcePath);
-		} catch(ex) { throw Error('Cannot open ${resourceName}: ' + ex); };`}
+		${Path.extname(resourceName) == ".node" ? `try { global.process.dlopen(module, resourcePath);
+		} catch(ex) { throw Error('Cannot open ${resourceName}: ' + ex); };` : ''}
 	})();`;
 }
 

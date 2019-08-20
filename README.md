@@ -55,7 +55,8 @@ module.exports = {
 |   **`tempDir`**                             |   `{String}`            |   `'myAddons'`    | The name of the folder in the temporary folder
 |   **[`resourceDir`](#resourceDir)**         |   `{Boolean\|String}`   |   `false`         | One folder name for all addons
 |   **[`grouping`](#grouping)**               |   `{Array}`             |   `[]`            | Grouping files into one folder
-|   **[`dependencies`](#dependencies)**       |   `{Object}`            |   `{}`            | Save dependencies
+|   **[`dependencies`](#dependencies)**       |   `{Object}`            |   `{}`            | Saving dependencies
+|   **[`dirs`](#dirs)** (beta)                |   `{Object}`            |   `{}`            | Saving specified files and folders
 
 
 ### `resourceDir`
@@ -141,7 +142,59 @@ module.exports = {
 };
 ```
 
+### `dirs`
 
+Type: `Object`
+Default: `{}`
+
+Resource folder will have a name by `hashName` from resource path...
+
+**webpack.config.js**
+```js
+module.exports = {
+  target: 'node',
+  module: {
+    rules: [{
+      test: /\.node$/,
+      loader: "b64-loader",
+      options: {
+        tempDir: "blessedApp",
+        dirs: {
+          'linux': [
+            // All files and folders in resource folder
+            '.',
+          ]
+        }
+      }
+    }]
+  }
+};
+```
+
+## Example without WebPack (Beta)
+
+**index.js**
+```js
+const Fs = require("fs-extra");
+const b64Loader = require("b64-loader").custom;
+
+const tempDir = "myPacker";
+
+const res = b64Loader(
+	"D:/projects/node/webpack/blessed/usr/linux",
+	null, // No source
+	{
+		tempDir,
+		dirs: {
+			'linux': [
+				// All files in `D:/projects/node/webpack/blessed/usr/`
+				'.',
+			]
+		}
+	}
+)
+Fs.writeFileSync("./blessed/lib/vjuh-usr-win.js", res);
+```
 
 [npm]: https://img.shields.io/npm/v/b64-loader.svg?style=flat-square
 [used-by]: https://img.shields.io/npm/dt/b64-loader?label=used%20by&style=flat-square
