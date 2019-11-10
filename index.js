@@ -1,5 +1,5 @@
 /**
- * Version: 19.08.2019 18:28
+ * Version: 22.08.2019 10:08
  */
 const Path = require("path");
 const Fs = require("fs");
@@ -97,23 +97,33 @@ function initPacker() {
         return createHash('md5').update(e).digest('hex').toString();
     };`;
 
+    res += `function extract(resourcePath, resourceData, sum5, resourceName, tryIndex = 0) {
+        let tempResourcePath = tryIndex > 0 ? \`$\{resourcePath}.t$\{tryIndex}\` : resourcePath;
+        try {
+            if(!Fs.existsSync(tempResourcePath) || getSum(Fs.readFileSync(tempResourcePath).toString('base64')) != sum5)
+                Fs.writeFileSync(tempResourcePath, Buffer.from(resourceData, 'base64'));
+        } catch(ex) { throw Error(\`Failed to export file $\{resourceName\}: $\{ex}\`); }
+
+        if(Path.extname(resourceName) == ".node") {
+            try { global.process.dlopen(module, tempResourcePath); }
+            catch(ex) { if(ex.code == "EBUSY") { return extract(resourcePath, resourceData, sum5, resourceName, ++tryIndex); } throw Error(\`Cannot open $\{resourceName}: $\{ex}\`); };
+        }
+    };`;
+
     return res;
 }
 
 function addResource(content, resourceName, resourceDir, tempDir) {
-    return `
-    ;(function() {
-		var resourceData = '${content.toString('base64')}';
+    const base = content.toString('base64');
+    return `(function() {
+		var resourceData = '${base}';
 		var tempPath = path.resolve(os.tmpdir(), '${tempDir}', '${slash(resourceDir)}');
 		var resourcePath = path.join(tempPath, '${resourceName}');
 		try { Fs.mkdirSync(tempPath, { recursive: true }); } catch(ex) { throw Error('Failed create temp folder: ' + ex); }
-		try {
-			if(!Fs.existsSync(resourcePath) || getSum(Fs.readFileSync(resourcePath).toString('base64')) != "${getSum(content.toString('base64'))}")
-				Fs.writeFileSync(resourcePath, Buffer.from(resourceData, 'base64'));
-		} catch(ex) { throw Error('Failed to export file ${resourceName}: ' + ex); }
-		${Path.extname(resourceName) == ".node" ? `try { global.process.dlopen(module, resourcePath);
-		} catch(ex) { throw Error('Cannot open ${resourceName}: ' + ex); };` : ''}
-	})();`;
+        extract(resourcePath, resourceData, "${getSum(base)}", '${resourceName}');
+	})();
+
+    `;
 }
 
 
